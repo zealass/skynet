@@ -505,19 +505,21 @@ load_matrixfile(lua_State *L) {
 	return 1;
 }
 
+#define SSM_SIZE (1024*1024)
+
 static int
 matrix_from_file(lua_State *L) {
-	luaS_expandshr(4096);
+	luaS_expandshr(SSM_SIZE);
 	lua_State *mL = luaL_newstate();
 	if (mL == NULL) {
-		luaS_expandshr(-4096);
+		luaS_expandshr(-SSM_SIZE);
 		return luaL_error(L, "luaL_newstate failed");
 	}
 	const char * source = luaL_checkstring(L, 1);
 	lua_pushcfunction(mL, load_matrixfile);
 	lua_pushlightuserdata(mL, (void *)source);
 	int ok = lua_pcall(mL, 1, 1, 0);
-	luaS_expandshr(-4096);
+	luaS_expandshr(-SSM_SIZE);
 	if (ok != LUA_OK) {
 		lua_pushstring(L, lua_tostring(mL, -1));
 		lua_close(mL);
