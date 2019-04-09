@@ -134,8 +134,20 @@ main(int argc, char *argv[]) {
 
 	struct skynet_config config;
 
+#ifdef ENABLE_SHORT_STRING_TABLE
+
+	luaS_expandshr(4096);
+
+	// put fixed short string into SSM
 	struct lua_State *L = luaL_newstate();
 	luaL_openlibs(L);	// link lua lib
+
+	luaS_expandshr(-4096);
+
+#else
+	struct lua_State *L = luaL_newstate();
+	luaL_openlibs(L);	// link lua lib
+#endif
 
 	int err =  luaL_loadbufferx(L, load_config, strlen(load_config), "=[skynet config]", "t");
 	assert(err == LUA_OK);

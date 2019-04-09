@@ -24,8 +24,10 @@
 */
 #define wgkey(n)		(&(n)->i_key.nk)
 
-#define invalidateTMcache(t)	((t)->flags = 0)
+#define invalidateTMcache(t)	((t)->flags &= SHAREDTABLE)
 
+#define makeShared(t)	((t)->flags |= SHAREDTABLE)
+#define isShared(t) ((t)->flags & SHAREDTABLE)
 
 /* true when 't' is using 'dummynode' as its hash part */
 #define isdummy(t)		((t)->lastfree == NULL)

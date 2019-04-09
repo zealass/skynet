@@ -422,7 +422,7 @@ Table *luaH_new (lua_State *L) {
   GCObject *o = luaC_newobj(L, LUA_TTABLE, sizeof(Table));
   Table *t = gco2t(o);
   t->metatable = NULL;
-  t->flags = cast_byte(~0);
+  t->flags = cast_byte(~0) & cast_byte(~SHAREDTABLE);
   t->array = NULL;
   t->sizearray = 0;
   setnodevector(L, t, 0);

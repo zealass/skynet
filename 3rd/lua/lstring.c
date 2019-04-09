@@ -563,7 +563,7 @@ luaS_expandshr(int n) {
 	}
 }
 
-LUAI_FUNC TString *
+LUA_API TString *
 luaS_clonestring(lua_State *L, TString *ts) {
   unsigned int h;
   int l;

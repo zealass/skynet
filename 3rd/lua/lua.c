@@ -598,7 +598,9 @@ int main (int argc, char **argv) {
   int status, result;
   lua_State *L;
   luaS_initshr();  /* init global short string table */
+  luaS_expandshr(4096);
   L = luaL_newstate();  /* create state */
+  luaS_expandshr(-4096);
   if (L == NULL) {
     l_message(argv[0], "cannot create state: not enough memory");
     return EXIT_FAILURE;

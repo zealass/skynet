@@ -499,6 +499,7 @@ typedef struct Node {
   TKey i_key;
 } Node;
 
+#define SHAREDTABLE 0x80
 
 typedef struct Table {
   CommonHeader;

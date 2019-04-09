@@ -268,7 +268,9 @@ static void reallymarkobject (global_State *g, GCObject *o) {
       break;
     }
     case LUA_TTABLE: {
-      linkgclist(gco2t(o), g->gray);
+      Table *h = gco2t(o);
+      if (!isShared(h))
+        linkgclist(h, g->gray);
       break;
     }
     case LUA_TTHREAD: {
