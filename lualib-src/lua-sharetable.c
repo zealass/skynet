@@ -447,9 +447,9 @@ static int
 get_size(lua_State *L) {
 	struct state_ud *ud = (struct state_ud *)luaL_checkudata(L, 1, "BOXMATRIXSTATE");
 	if (ud->L) {
-		lua_Integer sz = lua_gc(L, LUA_GCCOUNT, 0);
+		lua_Integer sz = lua_gc(ud->L, LUA_GCCOUNT, 0);
 		sz *= 1024;
-		sz += lua_gc(L, LUA_GCCOUNTB, 0);
+		sz += lua_gc(ud->L, LUA_GCCOUNTB, 0);
 		lua_pushinteger(L, sz);
 	} else {
 		lua_pushinteger(L, 0);
