@@ -106,6 +106,7 @@ local function sharetable_service()
 		for filename, m in pairs(files) do
 			info[filename] = {
 				current = m:getptr(),
+				size = m:size(),
 			}
 		end
 
@@ -128,7 +129,9 @@ local function sharetable_service()
 			table.insert(h, string.format("%s [%d]: (%s)", copy.matrix:getptr(), copy.matrix:size(), address(copy.refs)))
 		end
 		for _, v in pairs(info) do
-			v.history = table.concat(v.history, "\n\t")
+			if v.history then
+				v.history = table.concat(v.history, "\n\t")
+			end
 		end
 
 		return info
@@ -161,9 +164,9 @@ function sharetable.load(filename, source)
 	skynet.call(sharetable.address, "lua", "load", filename, source)
 end
 
-function sharetable.query(filename)
+function sharetable.query(filename, info)
 	local newptr = skynet.call(sharetable.address, "lua", "query", filename)
-	return core.clone(newptr)
+	return core.clone(newptr, info)
 end
 
 return sharetable

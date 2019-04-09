@@ -4,7 +4,7 @@ require "skynet.manager"	-- import skynet.launch, ...
 local memory = require "skynet.memory"
 
 skynet.start(function()
-	local sharestring = tonumber(skynet.getenv "sharestring" or 4096)
+	local sharestring = tonumber(skynet.getenv "sharestring" or 0)
 	memory.ssexpand(sharestring)
 
 	local standalone = skynet.getenv "standalone"

@@ -214,23 +214,6 @@ real_table(lua_State *L, Table *t) {
 	return rt;
 }
 
-static void
-patch_table(lua_State *L) {
-	switch(lua_type(L, -3)) {
-	case LUA_TNIL:
-		lua_newtable(L);
-		lua_replace(L, -4);
-		break;
-	case LUA_TTABLE:
-		break;
-	default:
-		// never be here
-		luaL_error(L, "Invalid patch table %s", lua_typename(L, lua_type(L, -3)));
-		break;
-	}
-	lua_rawset(L, -3);
-}
-
 static TString *
 clone_shared_string(lua_State *L, const TValue *v) {
 	TString * s = tsvalue(v);
@@ -291,12 +274,19 @@ pairs_keypatch(lua_State *L) {
 	return 3;
 }
 
-static int clone(lua_State *L, Table *t);
+struct clone_info {
+	int shared;
+	int keypatch;
+	int valuepatch;
+	int patched;
+};
+
+static int clone(lua_State *L, Table *t, struct clone_info *ci);
 
 static int
-clone_value(lua_State *L, const TValue *v) {
+clone_value(lua_State *L, const TValue *v, struct clone_info *ci) {
 	if (ttistable(v)) {
-		if (clone(L, hvalue(v))) {
+		if (clone(L, hvalue(v), ci)) {
 			return 1;
 		}
 	} else if (ttisshrstring(v)) {
@@ -310,8 +300,27 @@ clone_value(lua_State *L, const TValue *v) {
 	return 0;
 }
 
+static void
+patch_table(lua_State *L, struct clone_info *ci) {
+	switch(lua_type(L, -3)) {
+	case LUA_TNIL:
+		lua_newtable(L);
+		lua_replace(L, -4);
+		break;
+	case LUA_TTABLE:
+		break;
+	default:
+		// never be here
+		luaL_error(L, "Invalid patch table %s", lua_typename(L, lua_type(L, -3)));
+		break;
+	}
+	lua_rawset(L, -3);
+	++ci->patched;
+}
+
 static int
-clone(lua_State *L, Table *t) {
+clone(lua_State *L, Table *t, struct clone_info *ci) {
+	++ci->shared;
 	luaL_checkstack(L, 4, NULL);
 	int keypatch = 0;
 	int valuepatch = 0;
@@ -321,11 +330,11 @@ clone(lua_State *L, Table *t) {
 	unsigned int i;
 	for (i=0;i<t->sizearray;i++) {
 		TValue * v = &t->array[i];
-		if (clone_value(L, v)) {
+		if (clone_value(L, v, ci)) {
 			valuepatch = 1;
 			lua_pushinteger(L, i+1);
 			lua_insert(L, -2);
-			patch_table(L);
+			patch_table(L, ci);
 		}
 	}
 	unsigned int hsz = sizenode(t);
@@ -343,18 +352,18 @@ clone(lua_State *L, Table *t) {
 				setsvalue(L, L->top, keystr);
 				api_incr_top(L);
 
-				if (!clone_value(L, v)) {
+				if (!clone_value(L, v, ci)) {
 					setobj(L,L->top, v);
 					api_incr_top(L);
 				}
-				patch_table(L);
-			} else if (clone_value(L, v)) {
+				patch_table(L, ci);
+			} else if (clone_value(L, v, ci)) {
 				valuepatch = 1;
 				setobj(L,L->top, k);
 				api_incr_top(L);
 
 				lua_insert(L, -2);
-				patch_table(L);
+				patch_table(L, ci);
 			}
 		}
 	}
@@ -367,8 +376,10 @@ clone(lua_State *L, Table *t) {
 		lua_pushcfunction(L, readerror);
 		lua_setfield(L, -2, "__newindex");
 		if (keypatch) {
+			ci->keypatch++;
 			lua_pushcfunction(L, pairs_keypatch);
 		} else {
+			ci->valuepatch++;
 			lua_pushcfunction(L, pairs_valuepatch);
 		}
 		lua_setfield(L, -2, "__pairs");
@@ -387,12 +398,23 @@ clone_table(lua_State *L) {
 	Table * t = (Table *)lua_touserdata(L, 1);
 	if (!isShared(t))
 		return luaL_error(L, "Not a shared table");
+	struct clone_info ci = { 0,0,0 };
 
-	if (!clone(L, t)) {
+	if (!clone(L, t, &ci)) {
 		sethvalue(L, L->top, t);
 		api_incr_top(L);
 	}
 
+	if (lua_type(L, 2) == LUA_TTABLE) {
+		lua_pushinteger(L, ci.shared);
+		lua_setfield(L, 2, "shared");
+		lua_pushinteger(L, ci.keypatch);
+		lua_setfield(L, 2, "keypatch");
+		lua_pushinteger(L, ci.valuepatch);
+		lua_setfield(L, 2, "valuepatch");
+		lua_pushinteger(L, ci.patched);
+		lua_setfield(L, 2, "patched");
+	}
 	return 1;
 }
 
