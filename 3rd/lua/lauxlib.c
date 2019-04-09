@@ -701,7 +701,7 @@ static int skipcomment (LoadF *lf, int *cp) {
 
 LUA_API void luaS_expandshr(int n);
 
-static int luaL_loadfilex_ (lua_State *L, const char *filename,
+LUALIB_API int luaL_loadfilex_ (lua_State *L, const char *filename,
                                              const char *mode) {
   LoadF lf;
   int status, readstatus;

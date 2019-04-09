@@ -460,7 +460,7 @@ load_matrixfile(lua_State *L) {
 	luaL_openlibs(L);
 	const char * source = (const char *)lua_touserdata(L, 1);
 	if (source[0] == '@') {
-		if (luaL_dofile(L, source+1) != LUA_OK) {
+		if (luaL_loadfilex_(L, source+1, NULL) || lua_pcall(L, 0, LUA_MULTRET, 0)) {
 			lua_error(L);
 		}
 	} else {
